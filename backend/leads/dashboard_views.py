@@ -43,22 +43,25 @@ class OwnerDashboardView(APIView):
         # Breakdown by Location
         locations = list(queryset.values('city').annotate(count=Count('id')).order_by('-count')[:5])
 
-        # Team Performance
+        # Team Performance (Optimized using DB Annotations to eliminate N+1 queries)
         team_users = User.objects.filter(brand=brand) if brand else User.objects.all()
-        team_performance = []
-        for agent in team_users:
-            assigned = queryset.filter(assigned_to=agent).count()
-            qualified = queryset.filter(assigned_to=agent, qualification_status=QualificationStatus.QUALIFIED).count()
-            converted = queryset.filter(assigned_to=agent, sales_status=SalesStatus.CONVERTED).count()
-            team_performance.append({
+        team_users = team_users.annotate(
+            assigned_leads_count=Count('assigned_leads'),
+            qualified_leads_count=Count('assigned_leads', filter=Q(assigned_leads__qualification_status=QualificationStatus.QUALIFIED)),
+            converted_leads_count=Count('assigned_leads', filter=Q(assigned_leads__sales_status=SalesStatus.CONVERTED))
+        )
+        team_performance = [
+            {
                 'id': agent.id,
                 'name': agent.get_full_name(),
                 'email': agent.email,
                 'role': agent.role,
-                'assigned_leads': assigned,
-                'qualified_leads': qualified,
-                'converted_leads': converted,
-            })
+                'assigned_leads': agent.assigned_leads_count,
+                'qualified_leads': agent.qualified_leads_count,
+                'converted_leads': agent.converted_leads_count,
+            }
+            for agent in team_users
+        ]
 
         data = {
             'total_leads': total_leads,

@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
+from decimal import Decimal
+
 class UserRole(models.TextChoices):
     BRAND_OWNER = 'BRAND_OWNER', _('Brand Owner')
     SALES_MANAGER = 'SALES_MANAGER', _('Sales Manager')
@@ -20,6 +22,10 @@ class Brand(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='brands')
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
+    min_investment_threshold = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal('1500000.00'),
+        help_text=_('Minimum investment capacity required for a lead to qualify.')
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

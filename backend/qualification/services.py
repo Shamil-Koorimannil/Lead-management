@@ -40,11 +40,14 @@ def calculate_lead_qualification(lead: Lead, save: bool = True) -> Lead:
     determines status (QUALIFIED, REVIEW, NOT_QUALIFIED) and generates reason summary.
     """
     # 1. Hard Disqualifier Check
-    HARD_DISQUALIFIER_THRESHOLD = Decimal('1500000.00')  # ₹15,00,000
-    if lead.investment_capacity is not None and lead.investment_capacity < HARD_DISQUALIFIER_THRESHOLD:
+    threshold = Decimal('1500000.00')
+    if lead.brand and hasattr(lead.brand, 'min_investment_threshold') and lead.brand.min_investment_threshold is not None:
+        threshold = Decimal(str(lead.brand.min_investment_threshold))
+
+    if lead.investment_capacity is not None and lead.investment_capacity < threshold:
         lead.qualification_score = 0
         lead.qualification_status = QualificationStatus.NOT_QUALIFIED
-        lead.qualification_reason = "Lead is not qualified because investment capacity is below the minimum threshold (₹15,00,000)."
+        lead.qualification_reason = f"Lead is not qualified because investment capacity is below the minimum threshold (₹{threshold:,.2f})."
         if save:
             lead.save(update_fields=['qualification_score', 'qualification_status', 'qualification_reason', 'updated_at'])
         return lead

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, Eye, UserPlus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { leadsService, LeadFilterParams } from '../../services/leads';
 import { usersService } from '../../services/users';
-import { Lead, User } from '../../types';
+import { Lead, User, LeadSource } from '../../types';
 import { QualificationBadge, SalesStatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -33,7 +33,18 @@ export const OwnerLeads: React.FC = () => {
   const [assignAgentId, setAssignAgentId] = useState<number | ''>('');
 
   // New Lead form state
-  const [newLead, setNewLead] = useState({
+  const [newLead, setNewLead] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    city: string;
+    preferred_location: string;
+    investment_capacity: string;
+    property_available: boolean;
+    business_experience: boolean;
+    expected_start: string;
+    lead_source: LeadSource;
+  }>({
     name: '',
     phone: '',
     email: '',

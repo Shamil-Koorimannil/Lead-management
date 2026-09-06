@@ -12,7 +12,15 @@ class BrandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Brand
-        fields = ['id', 'name', 'slug', 'organization', 'organization_name']
+        fields = ['id', 'name', 'slug', 'organization', 'organization_name', 'min_investment_threshold']
+
+class BrandSettingsSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+
+    class Meta:
+        model = Brand
+        fields = ['id', 'name', 'slug', 'organization_name', 'min_investment_threshold', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'slug', 'organization_name', 'created_at', 'updated_at']
 
 class UserSerializer(serializers.ModelSerializer):
     brand_name = serializers.CharField(source='brand.name', read_only=True, allow_null=True)
@@ -30,12 +38,27 @@ class UserSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         return obj.get_full_name()
 
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request and request.user and not request.user.is_superuser:
+            if 'brand' in attrs and attrs['brand'] != request.user.brand:
+                attrs['brand'] = request.user.brand
+        return attrs
+
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'password', 'role', 'brand', 'is_active']
+        extra_kwargs = {'brand': {'required': False, 'allow_null': True}}
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request and request.user and not request.user.is_superuser:
+            # Force Brand Owner / Sales Manager to create user strictly inside their own brand
+            attrs['brand'] = request.user.brand
+        return attrs
 
     def create(self, validated_data):
         password = validated_data.pop('password')

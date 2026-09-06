@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Search, Filter, Eye, Clock, Plus } from 'lucide-react';
 import { leadsService } from '../../services/leads';
-import { Lead } from '../../types';
+import { Lead, LeadSource } from '../../types';
 import { QualificationBadge, SalesStatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -19,7 +19,18 @@ export const SalesLeads: React.FC = () => {
   const [qualificationStatus, setQualificationStatus] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const [newLead, setNewLead] = useState({
+  const [newLead, setNewLead] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    city: string;
+    preferred_location: string;
+    investment_capacity: string;
+    property_available: boolean;
+    business_experience: boolean;
+    expected_start: string;
+    lead_source: LeadSource;
+  }>({
     name: '',
     phone: '',
     email: '',
