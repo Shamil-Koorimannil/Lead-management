@@ -11,8 +11,14 @@ from .serializers import (
 )
 from .permissions import IsBrandOwner, CanManageUsers
 
+from rest_framework.throttling import AnonRateThrottle
+
+class LoginRateThrottle(AnonRateThrottle):
+    scope = 'login'
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})

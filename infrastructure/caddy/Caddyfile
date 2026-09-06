@@ -1,5 +1,47 @@
-# Caddyfile Placeholder for future VPS / Reverse Proxy setup
-:80 {
-    reverse_proxy /api/* backend:8000
-    reverse_proxy frontend:5173
+{$DOMAIN:localhost} {
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Compression
+    encode zstd gzip
+
+    # API Backend Reverse Proxy
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Django Admin Reverse Proxy
+    handle /admin/* {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Django Static Files
+    handle /static/* {
+        reverse_proxy backend:8000
+    }
+
+    # Frontend SPA Reverse Proxy
+    handle {
+        reverse_proxy frontend:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
 }

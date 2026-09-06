@@ -1,4 +1,6 @@
+from decimal import Decimal
 from django.db import models, transaction
+from django.core.validators import MinValueValidator
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from users.models import Brand, User
@@ -60,7 +62,8 @@ class Lead(models.Model):
     preferred_location = models.CharField(max_length=100, blank=True, default='')
 
     investment_capacity = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True
+        max_digits=14, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.00'))]
     )
     property_available = models.BooleanField(default=False)
     business_experience = models.BooleanField(default=False)

@@ -94,10 +94,39 @@ class LeadViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
+        old_instance = self.get_object()
+        old_qualification_status = old_instance.qualification_status
+        old_sales_status = old_instance.sales_status
+
         instance = serializer.save()
 
         # Recalculate qualification server-side if relevant fields updated
         calculate_lead_qualification(instance, save=True)
+
+        # Detect and emit specific granular activity log events
+        if old_qualification_status != instance.qualification_status:
+            ActivityLog.objects.create(
+                brand=instance.brand,
+                lead=instance,
+                actor=user,
+                action=ActivityAction.QUALIFICATION_CHANGED,
+                description=f"Qualification status changed from {old_qualification_status} to {instance.qualification_status}."
+            )
+
+        if old_sales_status != instance.sales_status:
+            action_type = ActivityAction.STATUS_CHANGED
+            if instance.sales_status == SalesStatus.CONVERTED:
+                action_type = ActivityAction.LEAD_CONVERTED
+            elif instance.sales_status == SalesStatus.LOST:
+                action_type = ActivityAction.LEAD_LOST
+
+            ActivityLog.objects.create(
+                brand=instance.brand,
+                lead=instance,
+                actor=user,
+                action=action_type,
+                description=f"Sales status changed from {old_sales_status} to {instance.sales_status}."
+            )
 
         ActivityLog.objects.create(
             brand=instance.brand,

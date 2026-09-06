@@ -4,13 +4,11 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: lead_mgmt_postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-lead_management_db}
       POSTGRES_USER: ${POSTGRES_USER:-lead_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lead_password_dev_123}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,21 +16,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: lead_mgmt_backend
-    restart: always
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2
     environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-secret-key-change-in-production-1234567890}
-      DEBUG: ${DEBUG:-True}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DEBUG: ${DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,web}
       POSTGRES_DB: ${POSTGRES_DB:-lead_management_db}
       POSTGRES_USER: ${POSTGRES_USER:-lead_user}
@@ -41,25 +37,53 @@ services:
       POSTGRES_PORT: 5432
       DATABASE_URL: postgres://${POSTGRES_USER:-lead_user}:${POSTGRES_PASSWORD:-lead_password_dev_123}@postgres:5432/${POSTGRES_DB:-lead_management_db}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - app_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: lead_mgmt_frontend
-    restart: always
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    restart: unless-stopped
+    expose:
+      - "80"
     environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     depends_on:
       - backend
+    networks:
+      - app_network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: lead_mgmt_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

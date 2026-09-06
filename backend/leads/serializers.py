@@ -43,6 +43,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'qualification_reason', 'assigned_at', 'created_at', 'updated_at'
         ]
 
+    def validate_investment_capacity(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Investment capacity cannot be negative.")
+        return value
+
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
@@ -53,6 +58,11 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'follow_up_required', 'next_follow_up_at', 'follow_up_type', 'follow_up_note'
         ]
         read_only_fields = ['id', 'brand']
+
+    def validate_investment_capacity(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Investment capacity cannot be negative.")
+        return value
 
 class FollowUpScheduleSerializer(serializers.Serializer):
     next_follow_up_at = serializers.DateTimeField(required=True)

@@ -174,3 +174,48 @@ class RemediationPhase1TestCase(TestCase):
         self.assertEqual(agent_perf['assigned_leads'], 1)
         self.assertEqual(agent_perf['qualified_leads'], 1)
         self.assertEqual(agent_perf['converted_leads'], 1)
+
+    # ------------------------------------------------------------------
+    # 5. INVESTMENT CAPACITY VALIDATION TESTS
+    # ------------------------------------------------------------------
+    def test_negative_investment_capacity_rejected(self):
+        """Verify negative investment capacity amounts are rejected with HTTP 400 Bad Request."""
+        self.client.force_authenticate(user=self.owner_a)
+
+        payload = {
+            'name': 'Negative Investment Lead',
+            'phone': '+919999000111',
+            'email': 'negative@example.com',
+            'city': 'Kochi',
+            'investment_capacity': '-500000.00',  # Invalid negative capacity
+        }
+
+        response = self.client.post('/api/leads/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('investment_capacity', response.data)
+
+    # ------------------------------------------------------------------
+    # 6. GRANULAR ACTIVITY LOG EVENT TESTS
+    # ------------------------------------------------------------------
+    def test_granular_activity_log_events(self):
+        """Verify updating lead sales status emits STATUS_CHANGED and LEAD_CONVERTED activity logs."""
+        self.client.force_authenticate(user=self.owner_a)
+
+        lead = Lead.objects.create(
+            brand=self.brand_a,
+            lead_number='LEAD-000300',
+            name='Activity Log Lead',
+            phone='+919999000222',
+            email='activitylog@example.com',
+            city='Kochi',
+            investment_capacity=Decimal('2500000.00'),
+            sales_status=SalesStatus.NEW
+        )
+
+        # Update sales status to CONVERTED
+        res = self.client.patch(f'/api/leads/{lead.id}/', {'sales_status': SalesStatus.CONVERTED})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        activities = list(lead.activities.values_list('action', flat=True))
+        self.assertIn('LEAD_CONVERTED', activities)
+
