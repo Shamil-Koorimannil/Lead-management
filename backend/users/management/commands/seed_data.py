@@ -83,7 +83,18 @@ class Command(BaseCommand):
             agent2.set_password(password)
             agent2.save()
 
-        self.stdout.write(self.style.SUCCESS('Users created/updated successfully.'))
+        # 2.1 Integration Token for M2M n8n Workflows
+        from integrations.models import IntegrationToken
+        IntegrationToken.objects.get_or_create(
+            key='n8n_sec_seed_test_key_1234567890',
+            defaults={
+                'brand': brand,
+                'name': 'n8n Production Workflow Token',
+                'is_active': True,
+            }
+        )
+
+        self.stdout.write(self.style.SUCCESS('Users and Integration Tokens created/updated successfully.'))
 
         # 3. Qualification Rules
         QualificationRule.objects.get_or_create(

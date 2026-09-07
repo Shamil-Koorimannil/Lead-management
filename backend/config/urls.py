@@ -10,5 +10,6 @@ urlpatterns = [
     path('api/qualification/', include('qualification.urls')),
     path('api/dashboard/', include('leads.dashboard_urls')),
     path('api/users/', include('users.management_urls')),
+    path('api/integrations/', include('integrations.urls')),
     path('api/settings/', SettingsView.as_view(), name='settings'),
 ]

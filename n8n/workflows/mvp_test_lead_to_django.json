@@ -1,0 +1,185 @@
+{
+  "name": "MVP - Test Lead to Django",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1a2b3c4d-0001-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "name",
+              "value": "Ahmed Test"
+            },
+            {
+              "name": "phone",
+              "value": "+919999999001"
+            },
+            {
+              "name": "email",
+              "value": "ahmed.test@example.com"
+            },
+            {
+              "name": "city",
+              "value": "Kochi"
+            },
+            {
+              "name": "preferred_location",
+              "value": "Kochi"
+            },
+            {
+              "name": "expected_start",
+              "value": "3 months"
+            },
+            {
+              "name": "lead_source",
+              "value": "TEST"
+            },
+            {
+              "name": "external_event_id",
+              "value": "evt_test_001_manual"
+            }
+          ],
+          "number": [
+            {
+              "name": "investment_capacity",
+              "value": 5000000
+            }
+          ],
+          "boolean": [
+            {
+              "name": "property_available",
+              "value": true
+            },
+            {
+              "name": "business_experience",
+              "value": true
+            }
+          ]
+        }
+      },
+      "id": "1a2b3c4d-0002-4000-8000-000000000002",
+      "name": "Set Test Enquiry Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/integrations/v1/leads/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Integration-Api-Key",
+              "value": "={{$env.DJANGO_INTEGRATION_TOKEN || 'n8n_sec_seed_test_key_1234567890'}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "city",
+              "value": "={{ $json.city }}"
+            },
+            {
+              "name": "preferred_location",
+              "value": "={{ $json.preferred_location }}"
+            },
+            {
+              "name": "investment_capacity",
+              "value": "={{ $json.investment_capacity }}"
+            },
+            {
+              "name": "property_available",
+              "value": "={{ $json.property_available }}"
+            },
+            {
+              "name": "business_experience",
+              "value": "={{ $json.business_experience }}"
+            },
+            {
+              "name": "expected_start",
+              "value": "={{ $json.expected_start }}"
+            },
+            {
+              "name": "lead_source",
+              "value": "={{ $json.lead_source }}"
+            },
+            {
+              "name": "external_event_id",
+              "value": "={{ $json.external_event_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1a2b3c4d-0003-4000-8000-000000000003",
+      "name": "POST to Django Integration API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        680,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Test Enquiry Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Test Enquiry Payload": {
+      "main": [
+        [
+          {
+            "node": "POST to Django Integration API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

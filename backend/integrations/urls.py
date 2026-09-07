@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import IntegrationsPlaceholderView
+from .views import IntegrationLeadCreateView
 
 urlpatterns = [
-    path('', IntegrationsPlaceholderView.as_view(), name='integrations-placeholder'),
+    path('v1/leads/', IntegrationLeadCreateView.as_view(), name='integration-lead-create'),
 ]
+

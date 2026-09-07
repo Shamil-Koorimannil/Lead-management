@@ -198,4 +198,36 @@ docker compose logs -f caddy
 
 # View PostgreSQL database logs
 docker compose logs -f postgres
+
+# View n8n workflow logs
+docker compose logs -f n8n
 ```
+
+---
+
+## 7. Self-Hosted n8n Infrastructure & M2M Authentication
+
+### Architecture & Security Isolation
+- **Subdomain Routing**: Proxying via Caddy at `n8n.yourdomain.com` (`n8n.{$DOMAIN:localhost}`).
+- **Network Boundaries**: n8n is connected strictly to `app_network` and exposes no public host ports.
+- **Database Access Restriction**: n8n does NOT connect directly to PostgreSQL. All operations flow through Django API.
+- **Machine-to-Machine Credentials**: n8n authenticates to Django using a dedicated API key (`X-Integration-Api-Key` or `Authorization: Api-Key <token>`).
+- **Brand Isolation**: The Django server resolves `request.user.brand` strictly from the integration credential. Payload parameter `brand_id` cannot override or bypass brand authority.
+- **Idempotency**: Django models track `IntegrationEvent(brand, external_event_id)` with a DB unique constraint. Duplicate webhook calls return the existing Lead with `X-Idempotent-Replay: true` without duplicating records.
+
+### Credential Rotation
+To rotate an integration token for a Brand:
+1. In Django Admin or CLI:
+   ```bash
+   docker compose exec backend python manage.py shell -c "
+   from integrations.models import IntegrationToken
+   from users.models import Brand
+   brand = Brand.objects.get(slug='zywo-franchise')
+   token = IntegrationToken.objects.filter(brand=brand).first()
+   token.key = IntegrationToken.generate_key()
+   token.save()
+   print('New Key:', token.key)
+   "
+   ```
+2. Update the `X-Integration-Api-Key` in n8n HTTP Request node credentials or `.env`.
+

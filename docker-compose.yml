@@ -78,6 +78,30 @@ services:
     depends_on:
       - frontend
       - backend
+      - n8n
+    networks:
+      - app_network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: lead_mgmt_n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=${N8N_HOST:-n8n.localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-https}
+      - NODE_ENV=production
+      - WEBHOOK_URL=${WEBHOOK_URL:-https://n8n.localhost/}
+      - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL:-https://n8n.localhost/}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-true}
+      - GENERIC_TIMEZONE=Asia/Kolkata
+    expose:
+      - "5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - backend
     networks:
       - app_network
 
@@ -89,3 +113,4 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  n8n_data:
