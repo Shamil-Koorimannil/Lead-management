@@ -31,64 +31,64 @@ export const OwnerDashboard: React.FC = () => {
       </div>
 
       {/* Primary KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="border-l-4 border-l-sky-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Total Leads</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Total Leads</span>
               <Users className="h-4 w-4 text-sky-600" />
             </div>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{data.total_leads}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1.5 sm:mt-2">{data.total_leads}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Qualified</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Qualified</span>
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
-            <p className="text-2xl font-bold text-emerald-700 mt-2">{data.qualified}</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-700 mt-1.5 sm:mt-2">{data.qualified}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-amber-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Review</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Review</span>
               <AlertCircle className="h-4 w-4 text-amber-600" />
             </div>
-            <p className="text-2xl font-bold text-amber-700 mt-2">{data.review}</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-700 mt-1.5 sm:mt-2">{data.review}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-rose-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Disqualified</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Disqualified</span>
               <XCircle className="h-4 w-4 text-rose-600" />
             </div>
-            <p className="text-2xl font-bold text-rose-700 mt-2">{data.not_qualified}</p>
+            <p className="text-xl sm:text-2xl font-bold text-rose-700 mt-1.5 sm:mt-2">{data.not_qualified}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-indigo-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Conversion</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Conversion</span>
               <TrendingUp className="h-4 w-4 text-indigo-600" />
             </div>
-            <p className="text-2xl font-bold text-indigo-700 mt-2">{data.conversion_rate}%</p>
+            <p className="text-xl sm:text-2xl font-bold text-indigo-700 mt-1.5 sm:mt-2">{data.conversion_rate}%</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Follow-ups</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Follow-ups</span>
               <Clock className="h-4 w-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-purple-700 mt-2">{data.active_followups}</p>
+            <p className="text-xl sm:text-2xl font-bold text-purple-700 mt-1.5 sm:mt-2">{data.active_followups}</p>
           </CardContent>
         </Card>
       </div>
@@ -151,35 +151,38 @@ export const OwnerDashboard: React.FC = () => {
           <CardTitle>Sales Team Performance Overview</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase">
-              <tr>
-                <th className="px-6 py-3">Team Member</th>
-                <th className="px-6 py-3">Role</th>
-                <th className="px-6 py-3">Assigned Leads</th>
-                <th className="px-6 py-3">Qualified Leads</th>
-                <th className="px-6 py-3">Converted Leads</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.team_performance.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-50/50">
-                  <td className="px-6 py-4 font-semibold text-slate-900">
-                    {member.name}
-                    <span className="block text-xs font-normal text-slate-400">{member.email}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant="info">{member.role.replace('_', ' ')}</Badge>
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-slate-800">{member.assigned_leads}</td>
-                  <td className="px-6 py-4 font-semibold text-emerald-700">{member.qualified_leads}</td>
-                  <td className="px-6 py-4 font-semibold text-indigo-700">{member.converted_leads}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase">
+                <tr>
+                  <th className="px-6 py-3 whitespace-nowrap">Team Member</th>
+                  <th className="px-6 py-3 whitespace-nowrap">Role</th>
+                  <th className="px-6 py-3 whitespace-nowrap">Assigned Leads</th>
+                  <th className="px-6 py-3 whitespace-nowrap">Qualified Leads</th>
+                  <th className="px-6 py-3 whitespace-nowrap">Converted Leads</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.team_performance.map((member) => (
+                  <tr key={member.id} className="hover:bg-slate-50/50">
+                    <td className="px-6 py-4 font-semibold text-slate-900 whitespace-nowrap">
+                      {member.name}
+                      <span className="block text-xs font-normal text-slate-400">{member.email}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant="info">{member.role.replace('_', ' ')}</Badge>
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">{member.assigned_leads}</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-700 whitespace-nowrap">{member.qualified_leads}</td>
+                    <td className="px-6 py-4 font-semibold text-indigo-700 whitespace-nowrap">{member.converted_leads}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
+
     </div>
   );
 };

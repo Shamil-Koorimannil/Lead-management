@@ -53,57 +53,58 @@ export const SalesDashboard: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <Card className="border-l-4 border-l-amber-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Overdue / Due Today</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Overdue / Due</span>
               <AlertTriangle className="h-4 w-4 text-amber-600" />
             </div>
-            <p className="text-2xl font-bold text-amber-700 mt-2">{data.metrics.followups_due}</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-700 mt-1.5 sm:mt-2">{data.metrics.followups_due}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Qualified Leads</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Qualified</span>
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
-            <p className="text-2xl font-bold text-emerald-700 mt-2">{data.metrics.qualified_leads}</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-700 mt-1.5 sm:mt-2">{data.metrics.qualified_leads}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-sky-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">New Leads</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">New Leads</span>
               <Users className="h-4 w-4 text-sky-600" />
             </div>
-            <p className="text-2xl font-bold text-sky-700 mt-2">{data.metrics.new_leads}</p>
+            <p className="text-xl sm:text-2xl font-bold text-sky-700 mt-1.5 sm:mt-2">{data.metrics.new_leads}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-indigo-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Meetings</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Meetings</span>
               <Calendar className="h-4 w-4 text-indigo-600" />
             </div>
-            <p className="text-2xl font-bold text-indigo-700 mt-2">{data.metrics.meetings_today}</p>
+            <p className="text-xl sm:text-2xl font-bold text-indigo-700 mt-1.5 sm:mt-2">{data.metrics.meetings_today}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-xs font-semibold uppercase tracking-wider">Priority Leads</span>
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Priority Leads</span>
               <Star className="h-4 w-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-purple-700 mt-2">{data.metrics.priority_leads}</p>
+            <p className="text-xl sm:text-2xl font-bold text-purple-700 mt-1.5 sm:mt-2">{data.metrics.priority_leads}</p>
           </CardContent>
         </Card>
       </div>
+
 
       {/* Grid: Overdue Follow-ups & Priority Qualified Leads */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
