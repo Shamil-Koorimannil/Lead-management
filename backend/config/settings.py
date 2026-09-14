@@ -87,7 +87,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and HAS_DJ_DATABASE_URL:
+use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1')
+
+if not use_sqlite and DATABASE_URL:
+    import socket
+    if '@postgres:' in DATABASE_URL or 'host=postgres' in DATABASE_URL:
+        try:
+            socket.gethostbyname('postgres')
+        except socket.gaierror:
+            use_sqlite = True
+
+if DATABASE_URL and HAS_DJ_DATABASE_URL and not use_sqlite:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -96,9 +106,8 @@ if DATABASE_URL and HAS_DJ_DATABASE_URL:
         )
     }
 else:
-    # Check if PostgreSQL credentials are configured or fallback to SQLite for local host unit testing
     postgres_host = os.environ.get('POSTGRES_HOST')
-    if postgres_host == 'postgres' or not postgres_host:
+    if postgres_host == 'postgres' or not postgres_host or use_sqlite:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
