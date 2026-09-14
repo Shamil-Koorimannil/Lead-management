@@ -50,3 +50,32 @@ export const SalesStatusBadge: React.FC<{ status: SalesStatus }> = ({ status }) 
   };
   return <Badge variant={styles[status] || 'default'}>{status.replace('_', ' ')}</Badge>;
 };
+
+export const TemperatureBadge: React.FC<{ temperature?: string | null }> = ({ temperature }) => {
+  if (!temperature) {
+    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">Not Yet Classified</span>;
+  }
+
+  const styles: Record<string, string> = {
+    HOT: "bg-amber-500 text-white font-bold border border-amber-600 shadow-sm",
+    WARM: "bg-amber-100 text-amber-800 font-semibold border border-amber-300",
+    COLD: "bg-sky-100 text-sky-800 font-semibold border border-sky-300",
+    LONG_TERM: "bg-purple-100 text-purple-800 font-semibold border border-purple-300",
+    DISQUALIFIED: "bg-rose-100 text-rose-800 font-semibold border border-rose-300",
+  };
+
+  const labels: Record<string, string> = {
+    HOT: "🔥 HOT",
+    WARM: "🟠 WARM",
+    COLD: "🔵 COLD",
+    LONG_TERM: "🟣 LONG TERM",
+    DISQUALIFIED: "🔴 DISQUALIFIED",
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs tracking-wide transition-colors ${styles[temperature] || 'bg-slate-100 text-slate-800'}`}>
+      {labels[temperature] || temperature}
+    </span>
+  );
+};
+

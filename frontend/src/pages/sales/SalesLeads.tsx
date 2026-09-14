@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Eye, Clock, Plus } from 'lucide-react';
 import { leadsService } from '../../services/leads';
 import { Lead, LeadSource } from '../../types';
-import { QualificationBadge, SalesStatusBadge } from '../../components/ui/Badge';
+import { QualificationBadge, SalesStatusBadge, TemperatureBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingState';
@@ -17,6 +17,8 @@ export const SalesLeads: React.FC = () => {
   const [search, setSearch] = useState('');
   const [salesStatus, setSalesStatus] = useState('');
   const [qualificationStatus, setQualificationStatus] = useState('');
+  const [leadTemperature, setLeadTemperature] = useState('');
+  const [leadSource, setLeadSource] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const [newLead, setNewLead] = useState<{
@@ -52,6 +54,8 @@ export const SalesLeads: React.FC = () => {
         search: search || undefined,
         sales_status: salesStatus || undefined,
         qualification_status: qualificationStatus || undefined,
+        lead_temperature: leadTemperature || undefined,
+        lead_source: leadSource || undefined,
       });
       setLeads(res.results);
     } finally {
@@ -61,7 +65,7 @@ export const SalesLeads: React.FC = () => {
 
   useEffect(() => {
     loadLeads();
-  }, [salesStatus, qualificationStatus]);
+  }, [salesStatus, qualificationStatus, leadTemperature, leadSource]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,8 +100,8 @@ export const SalesLeads: React.FC = () => {
 
       <Card>
         <CardContent className="p-4">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="relative col-span-1">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            <div className="relative col-span-1 sm:col-span-1">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
@@ -109,11 +113,36 @@ export const SalesLeads: React.FC = () => {
             </div>
 
             <select
+              value={leadTemperature}
+              onChange={(e) => setLeadTemperature(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            >
+              <option value="">All Temperatures</option>
+              <option value="HOT">🔥 Hot</option>
+              <option value="WARM">🟠 Warm</option>
+              <option value="COLD">🔵 Cold</option>
+              <option value="LONG_TERM">🟣 Long Term</option>
+              <option value="DISQUALIFIED">🔴 Disqualified</option>
+            </select>
+
+            <select
+              value={leadSource}
+              onChange={(e) => setLeadSource(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            >
+              <option value="">All Sources</option>
+              <option value="INSTAGRAM">Instagram</option>
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="WEBSITE">Website</option>
+              <option value="MANUAL">Manual</option>
+            </select>
+
+            <select
               value={qualificationStatus}
               onChange={(e) => setQualificationStatus(e.target.value)}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             >
-              <option value="">All Qualification Statuses</option>
+              <option value="">All Qualifications</option>
               <option value="QUALIFIED">Qualified</option>
               <option value="REVIEW">Needs Review</option>
               <option value="NOT_QUALIFIED">Not Qualified</option>
@@ -150,11 +179,11 @@ export const SalesLeads: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3">Lead #</th>
                     <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Location</th>
+                    <th className="px-4 py-3">Source</th>
+                    <th className="px-4 py-3">Temperature</th>
                     <th className="px-4 py-3">Investment</th>
                     <th className="px-4 py-3">Qualification</th>
                     <th className="px-4 py-3">Sales Status</th>
-                    <th className="px-4 py-3">Next Follow-up</th>
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
                 </thead>
@@ -164,9 +193,14 @@ export const SalesLeads: React.FC = () => {
                       <td className="px-4 py-3.5 font-mono text-xs font-bold text-sky-700">{lead.lead_number}</td>
                       <td className="px-4 py-3.5 font-medium text-slate-900">
                         {lead.name}
-                        <span className="block text-xs font-normal text-slate-400">{lead.phone}</span>
+                        <span className="block text-xs font-normal text-slate-400">{lead.phone || lead.city}</span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs">{lead.city}</td>
+                      <td className="px-4 py-3.5 text-xs font-medium text-indigo-600">
+                        {lead.lead_source}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <TemperatureBadge temperature={lead.lead_temperature} />
+                      </td>
                       <td className="px-4 py-3.5 font-semibold text-slate-900 text-xs">
                         ₹{Number(lead.investment_capacity || 0).toLocaleString()}
                       </td>

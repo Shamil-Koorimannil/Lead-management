@@ -17,7 +17,8 @@ class LeadListSerializer(serializers.ModelSerializer):
         model = Lead
         fields = [
             'id', 'lead_number', 'name', 'phone', 'email', 'city', 'preferred_location',
-            'investment_capacity', 'qualification_score', 'qualification_status',
+            'investment_capacity', 'qualification_score', 'qualification_status', 'lead_temperature',
+            'current_profession', 'business_duration', 'previous_business_experience', 'opening_timeline',
             'sales_status', 'lead_source', 'assigned_to', 'assigned_to_name',
             'follow_up_required', 'next_follow_up_at', 'follow_up_type',
             'created_at', 'updated_at'
@@ -33,6 +34,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'id', 'brand', 'lead_number', 'name', 'phone', 'email', 'city',
             'preferred_location', 'investment_capacity', 'property_available',
             'business_experience', 'expected_start', 'lead_source',
+            'current_profession', 'business_duration', 'previous_business_experience',
+            'opening_timeline', 'lead_temperature',
             'qualification_score', 'qualification_status', 'qualification_reason',
             'follow_up_required', 'next_follow_up_at', 'follow_up_type', 'follow_up_note',
             'sales_status', 'assigned_to', 'assigned_to_detail', 'assigned_at',

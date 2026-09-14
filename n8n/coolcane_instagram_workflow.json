@@ -1,0 +1,179 @@
+{
+  "name": "CoolCane Instagram Franchise Qualification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "instagram-webhook",
+        "options": {}
+      },
+      "id": "node-meta-webhook",
+      "name": "Meta Instagram Webhook Ingestion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.object }}",
+              "value2": "instagram"
+            }
+          ]
+        }
+      },
+      "id": "node-filter-ig",
+      "name": "Validate Instagram Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = items[0].json.body;\nif (!body.entry || !body.entry.length) return [];\nconst entry = body.entry[0];
+const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0] : null;\nif (!messaging || !messaging.message || messaging.message.is_echo) return [];\n\nreturn [{\n  json: {\n    external_event_id: 'meta_evt_' + (messaging.message.mid || Date.now()),\n    instagram_account_id: entry.id,\n    instagram_user_id: messaging.sender.id,\n    username: '',\n    display_name: '',\n    message_text: messaging.message.text || '',\n    external_message_id: messaging.message.mid || ''\n  }\n}];"
+      },
+      "id": "node-parse-event",
+      "name": "Parse Instagram DM Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [540, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_API_URL }}/api/integrations/v1/instagram/process-message/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Integration-Api-Key",
+              "value": "={{ $env.N8N_INTEGRATION_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-django-call",
+      "name": "Call Django Integration API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.reply_text }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "node-check-reply",
+      "name": "Has Reply Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [980, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/v18.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.META_PAGE_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  recipient: { id: $('Parse Instagram DM Payload').item.json.instagram_user_id },\n  message: { text: $json.reply_text }\n}) }}",
+        "options": {}
+      },
+      "id": "node-send-ig-dm",
+      "name": "Send Instagram DM Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Meta Instagram Webhook Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Validate Instagram Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Instagram Event": {
+      "main": [
+        [
+          {
+            "node": "Parse Instagram DM Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Instagram DM Payload": {
+      "main": [
+        [
+          {
+            "node": "Call Django Integration API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Django Integration API": {
+      "main": [
+        [
+          {
+            "node": "Has Reply Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Reply Text?": {
+      "main": [
+        [
+          {
+            "node": "Send Instagram DM Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

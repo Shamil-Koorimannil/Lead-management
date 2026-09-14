@@ -20,3 +20,13 @@ class IntegrationLeadCreateSerializer(serializers.Serializer):
         if value is not None and value < 0:
             raise serializers.ValidationError("Investment capacity cannot be negative.")
         return value
+
+class InstagramProcessMessageSerializer(serializers.Serializer):
+    external_event_id = serializers.CharField(max_length=255, required=True, help_text="Unique external event identifier for idempotency")
+    instagram_account_id = serializers.CharField(max_length=255, required=True, help_text="Connected IG Professional Account ID")
+    instagram_user_id = serializers.CharField(max_length=255, required=True, help_text="Meta IG User ID")
+    username = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+    display_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+    message_text = serializers.CharField(required=True, allow_blank=True)
+    external_message_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+

@@ -8,7 +8,7 @@ import {
 import { leadsService } from '../../services/leads';
 import { conversationsService } from '../../services/conversations';
 import { Lead, Conversation, LeadNote, SalesStatus } from '../../types';
-import { QualificationBadge, SalesStatusBadge } from '../../components/ui/Badge';
+import { QualificationBadge, SalesStatusBadge, TemperatureBadge } from '../../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -132,6 +132,7 @@ export const SalesLeadDetail: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-3">
+          <TemperatureBadge temperature={lead.lead_temperature} />
           <QualificationBadge status={lead.qualification_status} score={lead.qualification_score} />
           <SalesStatusBadge status={lead.sales_status} />
         </div>
@@ -276,24 +277,62 @@ export const SalesLeadDetail: React.FC = () => {
 
         {/* Right Sidebar: Qualification & Follow-up Details */}
         <div className="space-y-6">
-          {/* Qualification Card */}
+          {/* Franchise Qualification & Temperature Card */}
           <Card className="border-l-4 border-l-emerald-600">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Lead Qualification Status
+                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Lead Qualification & Temperature
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div>
-                  <span className="font-semibold text-slate-600 block">Score</span>
+                  <span className="font-semibold text-slate-600 block">Temperature</span>
+                  <div className="mt-1"><TemperatureBadge temperature={lead.lead_temperature} /></div>
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-600 block text-right">Score</span>
                   <span className="text-2xl font-extrabold text-slate-900">{lead.qualification_score}/100</span>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <span className="text-slate-500 font-medium">Qualification Status:</span>
                 <QualificationBadge status={lead.qualification_status} />
               </div>
+
               <p className="text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed font-mono">
                 {lead.qualification_reason}
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Franchise Enquiry Attributes Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-bold text-slate-900">Franchise Data Collected</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2.5 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Investment Capacity</span>
+                <span className="font-bold text-slate-900">₹{Number(lead.investment_capacity || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Current Profession</span>
+                <span className="font-semibold text-slate-800">{lead.current_profession || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Business Duration</span>
+                <span className="font-semibold text-slate-800">{lead.business_duration || (lead.previous_business_experience ? 'Prev Exp: Yes' : 'N/A')}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Preferred Location</span>
+                <span className="font-semibold text-slate-800">{lead.preferred_location || lead.city || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-medium">Opening Timeline</span>
+                <span className="font-semibold text-slate-800">{lead.opening_timeline ? lead.opening_timeline.replace(/_/g, ' ') : 'N/A'}</span>
+              </div>
             </CardContent>
           </Card>
 

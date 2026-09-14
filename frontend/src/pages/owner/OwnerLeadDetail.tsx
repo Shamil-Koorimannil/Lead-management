@@ -9,7 +9,7 @@ import { leadsService } from '../../services/leads';
 import { conversationsService } from '../../services/conversations';
 import { usersService } from '../../services/users';
 import { Lead, Conversation, LeadNote, User, SalesStatus } from '../../types';
-import { QualificationBadge, SalesStatusBadge, Badge } from '../../components/ui/Badge';
+import { QualificationBadge, SalesStatusBadge, TemperatureBadge, Badge } from '../../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingState';
@@ -96,6 +96,7 @@ export const OwnerLeadDetail: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-3">
+          <TemperatureBadge temperature={lead.lead_temperature} />
           <SalesStatusBadge status={lead.sales_status} />
           <QualificationBadge status={lead.qualification_status} score={lead.qualification_score} />
         </div>

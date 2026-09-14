@@ -35,6 +35,32 @@ export type SalesStatus =
 
 export type QualificationStatus = 'QUALIFIED' | 'REVIEW' | 'NOT_QUALIFIED';
 
+export type LeadTemperature = 'HOT' | 'WARM' | 'COLD' | 'LONG_TERM' | 'DISQUALIFIED' | null;
+
+export type CurrentProfession = 'BUSINESS' | 'SALARIED' | 'SELF_EMPLOYED' | 'STUDENT' | 'OTHER' | null;
+
+export type OpeningTimeline =
+  | 'WITHIN_2_MONTHS'
+  | 'WITHIN_6_MONTHS'
+  | 'WITHIN_1_YEAR'
+  | 'MORE_THAN_1_YEAR'
+  | 'NOT_DECIDED'
+  | null;
+
+export type ConversationState =
+  | 'NEW'
+  | 'QUALIFYING'
+  | 'WAITING_INVESTMENT'
+  | 'CONFIRMING_INVESTMENT'
+  | 'WAITING_PROFESSION'
+  | 'WAITING_BUSINESS_DURATION'
+  | 'WAITING_PREVIOUS_EXPERIENCE'
+  | 'WAITING_LOCATION'
+  | 'WAITING_OPENING_TIMELINE'
+  | 'QUALIFIED'
+  | 'DISQUALIFIED'
+  | 'HUMAN_HANDOFF';
+
 export type FollowUpType = 'CALL' | 'WHATSAPP' | 'MEETING' | 'EMAIL' | 'OTHER';
 
 export interface ActivityLog {
@@ -60,6 +86,11 @@ export interface Lead {
   property_available: boolean;
   business_experience: boolean;
   expected_start: string;
+  current_profession?: CurrentProfession;
+  business_duration?: string;
+  previous_business_experience?: boolean | null;
+  opening_timeline?: OpeningTimeline;
+  lead_temperature: LeadTemperature;
   lead_source: LeadSource;
   qualification_score: number;
   qualification_status: QualificationStatus;
@@ -94,6 +125,8 @@ export interface Conversation {
   lead_number: string;
   channel: LeadSource;
   status: 'OPEN' | 'CLOSED';
+  state?: ConversationState;
+  is_automation_enabled?: boolean;
   messages: Message[];
   created_at: string;
   updated_at: string;

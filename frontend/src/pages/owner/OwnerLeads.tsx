@@ -5,7 +5,7 @@ import { Search, Filter, Plus, Eye, UserPlus, Trash2, ChevronLeft, ChevronRight 
 import { leadsService, LeadFilterParams } from '../../services/leads';
 import { usersService } from '../../services/users';
 import { Lead, User, LeadSource } from '../../types';
-import { QualificationBadge, SalesStatusBadge } from '../../components/ui/Badge';
+import { QualificationBadge, SalesStatusBadge, TemperatureBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -22,6 +22,7 @@ export const OwnerLeads: React.FC = () => {
   const [search, setSearch] = useState('');
   const [qualificationStatus, setQualificationStatus] = useState('');
   const [salesStatus, setSalesStatus] = useState('');
+  const [leadTemperature, setLeadTemperature] = useState('');
   const [leadSource, setLeadSource] = useState('');
   const [page, setPage] = useState(1);
 
@@ -66,6 +67,7 @@ export const OwnerLeads: React.FC = () => {
       if (search) params.search = search;
       if (qualificationStatus) params.qualification_status = qualificationStatus;
       if (salesStatus) params.sales_status = salesStatus;
+      if (leadTemperature) params.lead_temperature = leadTemperature;
       if (leadSource) params.lead_source = leadSource;
 
       const res = await leadsService.getLeads(params);
@@ -78,7 +80,7 @@ export const OwnerLeads: React.FC = () => {
 
   useEffect(() => {
     loadLeads();
-  }, [page, qualificationStatus, salesStatus, leadSource]);
+  }, [page, qualificationStatus, salesStatus, leadTemperature, leadSource]);
 
   useEffect(() => {
     usersService.getUsers().then(setUsers);
@@ -142,12 +144,12 @@ export const OwnerLeads: React.FC = () => {
       {/* Filter Toolbar */}
       <Card>
         <CardContent className="p-4">
-          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search lead #, name, phone..."
+                placeholder="Search lead #, name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none"
@@ -155,11 +157,24 @@ export const OwnerLeads: React.FC = () => {
             </div>
 
             <select
+              value={leadTemperature}
+              onChange={(e) => setLeadTemperature(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+            >
+              <option value="">All Temperatures</option>
+              <option value="HOT">🔥 Hot</option>
+              <option value="WARM">🟠 Warm</option>
+              <option value="COLD">🔵 Cold</option>
+              <option value="LONG_TERM">🟣 Long Term</option>
+              <option value="DISQUALIFIED">🔴 Disqualified</option>
+            </select>
+
+            <select
               value={qualificationStatus}
               onChange={(e) => setQualificationStatus(e.target.value)}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none"
             >
-              <option value="">All Qualification Statuses</option>
+              <option value="">All Qualifications</option>
               <option value="QUALIFIED">Qualified</option>
               <option value="REVIEW">Needs Review</option>
               <option value="NOT_QUALIFIED">Not Qualified</option>
@@ -215,7 +230,8 @@ export const OwnerLeads: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3">Lead #</th>
                     <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Location</th>
+                    <th className="px-4 py-3">Source</th>
+                    <th className="px-4 py-3">Temperature</th>
                     <th className="px-4 py-3">Investment</th>
                     <th className="px-4 py-3">Qualification</th>
                     <th className="px-4 py-3">Sales Status</th>
@@ -231,9 +247,12 @@ export const OwnerLeads: React.FC = () => {
                       </td>
                       <td className="px-4 py-3.5 font-medium text-slate-900">
                         {lead.name}
-                        <span className="block text-xs font-normal text-slate-400">{lead.phone}</span>
+                        <span className="block text-xs font-normal text-slate-400">{lead.phone || lead.city}</span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-slate-700">{lead.city}</td>
+                      <td className="px-4 py-3.5 text-xs font-medium text-indigo-600">{lead.lead_source}</td>
+                      <td className="px-4 py-3.5">
+                        <TemperatureBadge temperature={lead.lead_temperature} />
+                      </td>
                       <td className="px-4 py-3.5 font-semibold text-slate-900 text-xs">
                         ₹{Number(lead.investment_capacity || 0).toLocaleString()}
                       </td>

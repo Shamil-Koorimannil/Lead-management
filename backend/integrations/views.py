@@ -7,10 +7,11 @@ from leads.models import Lead, LeadSequence, ActivityLog, ActivityAction, LeadSo
 from leads.serializers import LeadDetailSerializer
 from qualification.services import calculate_lead_qualification
 
+from conversations.services import InstagramQualificationService
 from .models import IntegrationEvent
 from .authentication import IntegrationTokenAuthentication
 from .permissions import HasValidIntegrationToken
-from .serializers import IntegrationLeadCreateSerializer
+from .serializers import IntegrationLeadCreateSerializer, InstagramProcessMessageSerializer
 
 class IntegrationLeadCreateView(APIView):
     """
@@ -91,3 +92,71 @@ class IntegrationLeadCreateView(APIView):
             )
 
         return Response(LeadDetailSerializer(lead).data, status=status.HTTP_201_CREATED)
+
+class InstagramProcessMessageView(APIView):
+    """
+    Dedicated Machine-to-Machine Integration Endpoint for Instagram DM Qualification.
+    Authenticates n8n workflow via M2M Token, enforces event/message idempotency,
+    updates Django state machine & qualification engine, and returns exact reply text for Instagram.
+    """
+    authentication_classes = [IntegrationTokenAuthentication]
+    permission_classes = [HasValidIntegrationToken]
+
+    def post(self, request):
+        serializer = InstagramProcessMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        brand = request.user.brand
+        data = serializer.validated_data
+        external_event_id = data['external_event_id'].strip()
+
+        with transaction.atomic():
+            # Idempotency Check on IntegrationEvent
+            existing_event = IntegrationEvent.objects.filter(brand=brand, external_event_id=external_event_id).first()
+            if existing_event and existing_event.lead:
+                conv = existing_event.lead.conversations.filter(channel=LeadSource.INSTAGRAM).first()
+                return Response({
+                    'reply_text': '',
+                    'conversation_id': conv.id if conv else None,
+                    'lead_id': existing_event.lead.id,
+                    'lead_number': existing_event.lead.lead_number,
+                    'state': conv.state if conv else 'QUALIFYING',
+                    'lead_temperature': existing_event.lead.lead_temperature,
+                    'qualification_status': existing_event.lead.qualification_status,
+                    'is_duplicate': True
+                }, status=status.HTTP_200_OK, headers={'X-Idempotent-Replay': 'true'})
+
+            result = InstagramQualificationService.process_inbound_message(
+                brand=brand,
+                instagram_account_id=data['instagram_account_id'].strip(),
+                instagram_user_id=data['instagram_user_id'].strip(),
+                username=data.get('username', '').strip(),
+                display_name=data.get('display_name', '').strip(),
+                message_text=data['message_text'],
+                external_message_id=data.get('external_message_id', '').strip(),
+                external_event_id=external_event_id
+            )
+
+            # Save IntegrationEvent for idempotency tracking
+            IntegrationEvent.objects.create(
+                brand=brand,
+                external_event_id=external_event_id,
+                lead=result['lead'],
+                source='INSTAGRAM_N8N',
+                payload=request.data
+            )
+
+            lead = result['lead']
+            conv = result['conversation']
+
+            return Response({
+                'reply_text': result['reply_text'],
+                'conversation_id': conv.id if conv else None,
+                'lead_id': lead.id,
+                'lead_number': lead.lead_number,
+                'state': conv.state if conv else 'QUALIFYING',
+                'lead_temperature': lead.lead_temperature,
+                'qualification_status': lead.qualification_status,
+                'is_duplicate': result.get('is_duplicate', False)
+            }, status=status.HTTP_200_OK if result.get('is_duplicate') else status.HTTP_200_OK)
+

@@ -29,6 +29,27 @@ class QualificationStatus(models.TextChoices):
     REVIEW = 'REVIEW', _('Review')
     NOT_QUALIFIED = 'NOT_QUALIFIED', _('Not Qualified')
 
+class LeadTemperature(models.TextChoices):
+    HOT = 'HOT', _('Hot')
+    WARM = 'WARM', _('Warm')
+    COLD = 'COLD', _('Cold')
+    LONG_TERM = 'LONG_TERM', _('Long Term')
+    DISQUALIFIED = 'DISQUALIFIED', _('Disqualified')
+
+class CurrentProfession(models.TextChoices):
+    BUSINESS = 'BUSINESS', _('Business')
+    SALARIED = 'SALARIED', _('Salaried')
+    SELF_EMPLOYED = 'SELF_EMPLOYED', _('Self Employed')
+    STUDENT = 'STUDENT', _('Student')
+    OTHER = 'OTHER', _('Other')
+
+class OpeningTimeline(models.TextChoices):
+    WITHIN_2_MONTHS = 'WITHIN_2_MONTHS', _('Within 2 months')
+    WITHIN_6_MONTHS = 'WITHIN_6_MONTHS', _('Within 6 months')
+    WITHIN_1_YEAR = 'WITHIN_1_YEAR', _('Within 1 year')
+    MORE_THAN_1_YEAR = 'MORE_THAN_1_YEAR', _('More than 1 year')
+    NOT_DECIDED = 'NOT_DECIDED', _('Not decided yet')
+
 class FollowUpType(models.TextChoices):
     CALL = 'CALL', _('Call')
     WHATSAPP = 'WHATSAPP', _('WhatsApp')
@@ -68,6 +89,19 @@ class Lead(models.Model):
     property_available = models.BooleanField(default=False)
     business_experience = models.BooleanField(default=False)
     expected_start = models.CharField(max_length=100, blank=True, default='')
+
+    # Franchise Qualification Fields
+    current_profession = models.CharField(
+        max_length=30, choices=CurrentProfession.choices, null=True, blank=True
+    )
+    business_duration = models.CharField(max_length=100, blank=True, default='')
+    previous_business_experience = models.BooleanField(null=True, blank=True)
+    opening_timeline = models.CharField(
+        max_length=30, choices=OpeningTimeline.choices, null=True, blank=True
+    )
+    lead_temperature = models.CharField(
+        max_length=30, choices=LeadTemperature.choices, null=True, blank=True, default=None, db_index=True
+    )
 
     lead_source = models.CharField(
         max_length=30, choices=LeadSource.choices, default=LeadSource.MANUAL, db_index=True
@@ -109,12 +143,17 @@ class ActivityAction(models.TextChoices):
     LEAD_UPDATED = 'LEAD_UPDATED', _('Lead Updated')
     LEAD_ASSIGNED = 'LEAD_ASSIGNED', _('Lead Assigned')
     QUALIFICATION_CHANGED = 'QUALIFICATION_CHANGED', _('Qualification Changed')
+    LEAD_TEMPERATURE_CHANGED = 'LEAD_TEMPERATURE_CHANGED', _('Lead Temperature Changed')
+    LEAD_DISQUALIFIED = 'LEAD_DISQUALIFIED', _('Lead Disqualified')
+    QUALIFICATION_COMPLETED = 'QUALIFICATION_COMPLETED', _('Qualification Completed')
     STATUS_CHANGED = 'STATUS_CHANGED', _('Sales Status Changed')
     NOTE_ADDED = 'NOTE_ADDED', _('Note Added')
     FOLLOW_UP_SCHEDULED = 'FOLLOW_UP_SCHEDULED', _('Follow Up Scheduled')
     FOLLOW_UP_COMPLETED = 'FOLLOW_UP_COMPLETED', _('Follow Up Completed')
     LEAD_CONVERTED = 'LEAD_CONVERTED', _('Lead Converted')
     LEAD_LOST = 'LEAD_LOST', _('Lead Lost')
+    INSTAGRAM_MESSAGE_RECEIVED = 'INSTAGRAM_MESSAGE_RECEIVED', _('Instagram Message Received')
+    INSTAGRAM_MESSAGE_SENT = 'INSTAGRAM_MESSAGE_SENT', _('Instagram Message Sent')
 
 class ActivityLog(models.Model):
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='activities')

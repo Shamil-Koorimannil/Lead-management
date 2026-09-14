@@ -18,7 +18,10 @@ from .serializers import (
 class LeadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['qualification_status', 'sales_status', 'lead_source', 'assigned_to', 'city', 'follow_up_required']
+    filterset_fields = [
+        'qualification_status', 'lead_temperature', 'sales_status', 'lead_source',
+        'opening_timeline', 'current_profession', 'assigned_to', 'city', 'follow_up_required'
+    ]
     search_fields = ['lead_number', 'name', 'phone', 'email', 'city', 'preferred_location']
     ordering_fields = ['created_at', 'investment_capacity', 'qualification_score', 'next_follow_up_at', 'updated_at']
     ordering = ['-created_at']

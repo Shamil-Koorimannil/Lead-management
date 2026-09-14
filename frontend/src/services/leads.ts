@@ -5,6 +5,7 @@ export interface LeadFilterParams {
   search?: string;
   qualification_status?: string;
   sales_status?: string;
+  lead_temperature?: string;
   lead_source?: string;
   assigned_to?: number | string;
   city?: string;
