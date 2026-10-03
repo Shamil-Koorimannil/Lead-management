@@ -73,6 +73,7 @@ services:
       - "443:443/udp"
     volumes:
       - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./legal-pages:/srv/legal-pages:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -91,11 +92,16 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=${N8N_PROTOCOL:-https}
       - NODE_ENV=production
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-${WEBHOOK_URL:-https://n8n.localhost/}}
       - WEBHOOK_URL=${WEBHOOK_URL:-https://n8n.localhost/}
       - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL:-https://n8n.localhost/}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-true}
       - GENERIC_TIMEZONE=Asia/Kolkata
+      - DJANGO_API_URL=${DJANGO_API_URL:-http://backend:8000}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_INTEGRATION_TOKEN=${N8N_INTEGRATION_TOKEN}
+      - META_WEBHOOK_VERIFY_TOKEN=${META_WEBHOOK_VERIFY_TOKEN}
     expose:
       - "5678"
     volumes:

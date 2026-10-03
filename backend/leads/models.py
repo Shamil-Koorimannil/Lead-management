@@ -68,18 +68,22 @@ class LeadSequence(models.Model):
     def get_next_lead_number(cls, brand):
         with transaction.atomic():
             seq, _ = cls.objects.select_for_update().get_or_create(brand=brand)
-            number = seq.next_number
-            seq.next_number += 1
-            seq.save(update_fields=['next_number'])
-            return f"LEAD-{number:06d}"
+            prefix = brand.slug.replace('-', '').upper()[:4] if (brand and brand.slug) else 'LEAD'
+            while True:
+                number = seq.next_number
+                seq.next_number += 1
+                seq.save(update_fields=['next_number'])
+                candidate = f"{prefix}-{number:06d}"
+                if not Lead.objects.filter(lead_number=candidate).exists():
+                    return candidate
 
 class Lead(models.Model):
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='leads')
     lead_number = models.CharField(max_length=20, unique=True, db_index=True)
     name = models.CharField(max_length=255, db_index=True)
-    phone = models.CharField(max_length=50, db_index=True)
-    email = models.EmailField(db_index=True)
-    city = models.CharField(max_length=100, db_index=True)
+    phone = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    email = models.EmailField(blank=True, default='', db_index=True)
+    city = models.CharField(max_length=100, blank=True, default='', db_index=True)
     preferred_location = models.CharField(max_length=100, blank=True, default='')
 
     investment_capacity = models.DecimalField(

@@ -1,70 +1,76 @@
 # Meta Instagram Messaging Integration & Webhook Setup Guide
 
-This guide provides step-by-step instructions to connect the `@coolcane_india` Instagram Professional account with Meta Webhooks, n8n, and the Django Lead Management backend.
+This guide provides step-by-step instructions to connect an Instagram Professional account (such as `@coolcane_india`) with Meta Webhooks, n8n, and the Django Lead Management backend.
 
 ---
 
-## 1. Prerequisites & Account Setup
-
-1. **Instagram Professional Account**: Ensure `@coolcane_india` is converted to an Instagram Business or Creator account.
-2. **Facebook Page Link**: Connect `@coolcane_india` to an authoritative Facebook Page under your Meta Business Manager.
-3. **Meta Developer App**: Create a Meta App of type **Business** on [developers.facebook.com](https://developers.facebook.com).
+> [!IMPORTANT]
+> **SAFETY GATE NOTICE**: Do NOT connect `@coolcane_india` or any production Instagram account to the live Meta Webhook until local verification, test suite execution, and staging validation are fully completed.
 
 ---
 
-## 2. Meta App Configuration & Webhook Setup
+## 1. Meta App & Account Prerequisites
 
-1. In the Meta Developer Dashboard, add the **Instagram Graph API** product to your app.
-2. Under **Webhooks** $\rightarrow$ **Instagram**:
-   - **Callback URL**: `https://<your-n8n-domain>/webhook/instagram-webhook`
-   - **Verify Token**: Generate a secure random string (e.g. `coolcane_ig_sec_token_2026`).
-   - **Subscriptions**: Subscribe to `messages` and `messaging_postbacks`.
-3. Test Webhook verification challenge to ensure n8n / Caddy routes requests properly.
+1. **Instagram Professional Account**: Ensure your account is converted to an Instagram **Business** or **Creator** account.
+2. **Facebook Page Association**: Link the Instagram account to an authoritative Facebook Page under your Meta Business Manager.
+3. **Meta Developer App**: Create a Meta App of type **Business** (or containing **Instagram Graph API**) on [developers.facebook.com](https://developers.facebook.com).
 
 ---
 
-## 3. Required Meta Permissions
+## 2. Meta Instagram API Login & Permission Flow
 
-Request the following Meta API permissions:
-- `instagram_basic`
-- `instagram_manage_messages`
-- `pages_manage_metadata`
-- `pages_read_engagement`
+To interact with Instagram Direct Messages via Meta Graph API v19.0+, request and configure the following Meta permissions:
 
-> [!NOTE]
-> During development, test DMs can be received from assigned Meta App Testers.
-> For production access across all Instagram users, submit the app for **Meta App Review / Advanced Access**.
+### Required Meta API Permissions:
+- `instagram_basic`: Access basic profile information and account identity.
+- `instagram_manage_messages`: Read and send Instagram DMs, webhooks for message events.
+- `pages_show_list`: Retrieve associated Facebook Pages linked to the Instagram account.
+- `pages_read_engagement`: Access Page engagement data required for webhook delivery.
+- `pages_manage_metadata`: Manage webhooks and Page subscriptions.
+
+### Access Token Generation Flow:
+1. Open **Meta Business Manager** $\rightarrow$ **System Users** (or Meta Developer Access Token Tool).
+2. Generate a **Long-Lived Page Access Token** (or System User Access Token) with the permissions above.
+3. Connect the Access Token to your n8n integration workflow or backend environment variable (`META_PAGE_ACCESS_TOKEN`).
+
+### Development vs Production Access:
+- **Development Mode**: Standard DMs can only be received/sent between assigned **Meta App Testers** and the Instagram account.
+- **Production Mode**: Submit the Meta App for **App Review** to obtain **Advanced Access** for `instagram_manage_messages` and `instagram_basic`.
+
+---
+
+## 3. Webhook Architecture: Live Setup vs. Local Verification
+
+### A. Live Meta Webhook Setup (Production Mode)
+In a live Meta setup, Meta servers send real-time HTTP POST notifications when an Instagram DM is received:
+1. **Webhook Callback URL**: `https://<your-domain>/webhook/instagram` (routed via n8n / reverse proxy to Django).
+2. **Verification Token**: Meta sends a `hub.challenge` GET request with a secret `hub.verify_token` matching your configured secret.
+3. **Webhook Subscriptions**: In Meta Developer Dashboard $\rightarrow$ **Instagram Webhooks**, subscribe to:
+   - `messages`
+   - `messaging_postbacks`
+4. **Signature Verification**: Validate the `X-Hub-Signature-256` header on incoming payloads using your Meta App Secret.
+
+### B. Local Verification Flow (Development & Testing)
+During development and automated testing, **no connection to live Meta webhooks is made**. Instead:
+1. Automated unit tests execute locally using Django DRF test client against `/api/integrations/v1/instagram/process-message/`.
+2. Requests use internal integration authentication: `X-Integration-API-Key: <IntegrationToken.key>`.
+3. Event deduplication is validated using `external_event_id` and `external_message_id`.
+4. Lead isolation, dynamic brand prompts, and progressive state machine logic are verified deterministically without hitting external Meta APIs or sending DMs to real users.
 
 ---
 
 ## 4. Environment Variables in n8n
 
-Configure the following environment secrets in your n8n container:
-- `META_PAGE_ACCESS_TOKEN`: Long-lived Meta Page Access Token with `instagram_manage_messages` scope.
-- `DJANGO_API_URL`: Internal URL of the Django service (e.g., `http://backend:8000`).
-- `N8N_INTEGRATION_TOKEN`: Active `IntegrationToken` secret generated for the CoolCane Brand in Django.
+Configure the following secrets in your n8n container / workflow:
+- `META_PAGE_ACCESS_TOKEN`: Long-lived Meta Page Access Token (`instagram_manage_messages`).
+- `DJANGO_API_URL`: Internal URL of the Django backend service (e.g., `http://backend:8000`).
+- `N8N_INTEGRATION_TOKEN`: Active `IntegrationToken` secret generated for the Brand in Django.
 
 ---
 
-## 5. End-to-End Testing Procedure
-
-1. **Send Test Instagram DM**: Send a direct message to `@coolcane_india` from a test Instagram user.
-2. **Verify Qualification Flow**:
-   - First Message $\rightarrow$ Bot sends greeting and Investment range question.
-   - Reply `"10 lakh"` $\rightarrow$ Bot asks Current Profession.
-   - Reply `"Business owner"` $\rightarrow$ Bot asks Business Duration.
-   - Reply `"3 years"` $\rightarrow$ Bot asks Location.
-   - Reply `"Kochi"` $\rightarrow$ Bot asks Opening Timeline.
-   - Reply `"Within 2 months"` $\rightarrow$ Bot sends thank you message and updates lead to `HOT`.
-3. **Verify Disqualification**:
-   - Send `"5 lakh"` $\rightarrow$ Bot sends polite minimum threshold message and halts further questions. Lead is marked `DISQUALIFIED`.
-4. **Human Handoff Verification**:
-   - When a sales agent opens the lead detail and updates status or sends a message, `is_automation_enabled` halts bot replies.
-
----
-
-## 6. Disconnecting Automation
+## 5. Disconnecting or Pausing Automation
 
 To pause or disconnect automated responses:
-- Disable the workflow in n8n UI, OR
-- Set `is_automation_enabled = False` on the Target Lead/Conversation in Django.
+- Toggle off the workflow trigger in n8n UI, OR
+- Set `is_automation_enabled = False` on the Target Lead/Conversation in Django dashboard.
+

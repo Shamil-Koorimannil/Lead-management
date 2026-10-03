@@ -12,53 +12,96 @@ class InstagramQualificationService:
     """
     Authoritative Progressive State Machine for Instagram Franchise Enquiry Qualification.
     Enforces state persistence, deterministic qualification & temperature evaluation,
-    immediate disqualification below ₹10L, investment confirmation, and human handoff safety.
+    brand-configurable investment floor, dynamic prompts, investment confirmation, and human handoff safety.
     """
 
-    GREETING_AND_INVESTMENT_PROMPT = (
-        "Great! We'd be happy to help you explore the CoolCane franchise opportunity. "
-        "I'll ask you a few quick questions so we can understand whether it's suitable for you.\n\n"
-        "What approximate investment are you planning for the franchise?\n"
-        "• ₹10–15 lakh\n"
-        "• ₹15–25 lakh\n"
-        "• ₹25–50 lakh\n"
-        "• ₹50 lakh+\n"
-        "• Not sure"
-    )
+    @classmethod
+    def _get_brand_threshold(cls, brand) -> Decimal:
+        threshold = Decimal('1000000.00')
+        if brand and hasattr(brand, 'min_investment_threshold') and brand.min_investment_threshold is not None:
+            threshold = Decimal(str(brand.min_investment_threshold))
+        return threshold
 
-    PROFESSION_PROMPT = (
-        "Thank you! What is your current profession?\n"
-        "• Business owner\n"
-        "• Salaried / Job\n"
-        "• Self-employed / Professional\n"
-        "• Student\n"
-        "• Other"
-    )
+    @classmethod
+    def _format_lakh(cls, amount: Decimal) -> str:
+        if amount % Decimal('100000') == 0:
+            val = int(amount / Decimal('100000'))
+            return f"₹{val} lakh"
+        elif amount % Decimal('1000') == 0:
+            val = float(amount / Decimal('100000'))
+            return f"₹{val:g} lakh"
+        else:
+            return f"₹{amount:,.2f}"
 
-    BUSINESS_DURATION_PROMPT = "How long have you been running your current business?"
+    @classmethod
+    def get_investment_prompt(cls, brand) -> str:
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+        threshold = cls._get_brand_threshold(brand)
+        t_val = int(threshold / Decimal('100000')) if threshold % Decimal('100000') == 0 else float(threshold / Decimal('100000'))
+        return (
+            f"Great! We'd be happy to help you explore the {brand_name} franchise opportunity. "
+            f"I'll ask you a few quick questions so we can understand whether it's suitable for you.\n\n"
+            f"What approximate investment are you planning for the franchise?\n"
+            f"• ₹{t_val:g}–{t_val+5:g} lakh\n"
+            f"• ₹{t_val+5:g}–{t_val+15:g} lakh\n"
+            f"• ₹{t_val+15:g}–{t_val+40:g} lakh\n"
+            f"• ₹{t_val+40:g} lakh+\n"
+            f"• Not sure"
+        )
 
-    PREVIOUS_EXPERIENCE_PROMPT = "Have you previously owned or operated a business?"
+    @classmethod
+    def get_profession_prompt(cls) -> str:
+        return (
+            "Thank you! What is your current profession?\n"
+            "• Business owner\n"
+            "• Salaried / Job\n"
+            "• Self-employed / Professional\n"
+            "• Student\n"
+            "• Other"
+        )
 
-    LOCATION_PROMPT = "Which city or location are you considering for your CoolCane outlet?"
+    @classmethod
+    def get_business_duration_prompt(cls) -> str:
+        return "How long have you been running your current business?"
 
-    TIMELINE_PROMPT = (
-        "When are you planning to open your CoolCane outlet?\n"
-        "1. Within 2 months\n"
-        "2. Within 6 months\n"
-        "3. Within 1 year\n"
-        "4. More than 1 year\n"
-        "5. Not decided yet"
-    )
+    @classmethod
+    def get_previous_experience_prompt(cls) -> str:
+        return "Have you previously owned or operated a business?"
 
-    COMPLETION_MESSAGE = (
-        "Thank you! We have collected your franchise enquiry details. "
-        "A representative from our CoolCane franchise team will review your application and contact you shortly."
-    )
+    @classmethod
+    def get_location_prompt(cls, brand) -> str:
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+        return f"Which city or location are you considering for your {brand_name} outlet?"
 
-    DISQUALIFICATION_MESSAGE = (
-        "Thank you for your interest in CoolCane. Our franchise opportunity currently requires a minimum "
-        "investment of ₹10 lakh. Based on the investment range you've shared, it may not be the right fit at this stage."
-    )
+    @classmethod
+    def get_timeline_prompt(cls, brand) -> str:
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+        return (
+            f"When are you planning to open your {brand_name} outlet?\n"
+            f"1. Within 2 months\n"
+            f"2. Within 6 months\n"
+            f"3. Within 1 year\n"
+            f"4. More than 1 year\n"
+            f"5. Not decided yet"
+        )
+
+    @classmethod
+    def get_completion_message(cls, brand) -> str:
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+        return (
+            f"Thank you! We have collected your franchise enquiry details. "
+            f"A representative from our {brand_name} franchise team will review your application and contact you shortly."
+        )
+
+    @classmethod
+    def get_disqualification_message(cls, brand) -> str:
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+        threshold = cls._get_brand_threshold(brand)
+        t_lakh = cls._format_lakh(threshold)
+        return (
+            f"Thank you for your interest in {brand_name}. Our franchise opportunity currently requires a minimum "
+            f"investment of {t_lakh}. Based on the investment range you've shared, it may not be the right fit at this stage."
+        )
 
     @classmethod
     def process_inbound_message(cls, brand, instagram_account_id: str, instagram_user_id: str,
@@ -69,7 +112,7 @@ class InstagramQualificationService:
         Returns dict containing reply_text, conversation, lead, state, and is_duplicate flag.
         """
         with transaction.atomic():
-            # 1. Find or create InstagramContact
+            # 1. Find or create InstagramContact scoped strictly to (brand, instagram_account_id, instagram_user_id)
             contact, _ = InstagramContact.objects.get_or_create(
                 brand=brand,
                 instagram_account_id=instagram_account_id,
@@ -89,7 +132,6 @@ class InstagramQualificationService:
             # 2. Find or create associated Lead
             lead = contact.lead
             if not lead:
-                # Try finding lead by Instagram contact or create new Lead
                 lead_name = display_name or (f"@{username}" if username else f"IG User {instagram_user_id[:8]}")
                 from leads.models import LeadSequence
                 lead_num = LeadSequence.get_next_lead_number(brand)
@@ -97,7 +139,7 @@ class InstagramQualificationService:
                     brand=brand,
                     lead_number=lead_num,
                     name=lead_name,
-                    phone=f"IG:{instagram_user_id}",
+                    phone='',  # Kept blank until explicitly collected
                     email='',
                     city='',
                     lead_source=LeadSource.INSTAGRAM
@@ -153,7 +195,7 @@ class InstagramQualificationService:
             )
 
             # 6. Safety check: If automation disabled or human handoff state, do not send bot reply
-            if not conversation.is_automation_enabled or conversation.state in [ConversationState.HUMAN_HANDOFF, ConversationState.QUALIFIED]:
+            if not conversation.is_automation_enabled or conversation.state in [ConversationState.HUMAN_HANDOFF, ConversationState.QUALIFICATION_COMPLETE]:
                 return {
                     'reply_text': '',
                     'conversation': conversation,
@@ -205,21 +247,22 @@ class InstagramQualificationService:
     def _evaluate_state_transition(cls, conversation: Conversation, lead: Lead, text: str) -> tuple[str, str]:
         current_state = conversation.state
         cleaned_text = text.strip()
+        brand = lead.brand
 
         # Initial state -> send greeting & ask investment
         if current_state in [ConversationState.NEW, ConversationState.QUALIFYING]:
-            # Ask investment
             parsed = normalize_investment(cleaned_text)
             if parsed['status'] != 'INVALID' and parsed['value'] is not None:
-                # User provided investment in their first message!
                 return cls._handle_investment_value(conversation, lead, parsed)
-            return cls.GREETING_AND_INVESTMENT_PROMPT, ConversationState.WAITING_INVESTMENT
+            return cls.get_investment_prompt(brand), ConversationState.WAITING_INVESTMENT
 
         elif current_state == ConversationState.WAITING_INVESTMENT:
             parsed = normalize_investment(cleaned_text)
             if parsed['status'] == 'INVALID' or parsed['value'] is None:
+                threshold = cls._get_brand_threshold(brand)
+                t_lakh = cls._format_lakh(threshold)
                 return (
-                    "Could you please specify your approximate investment budget? For example: ₹10 lakh, ₹15 lakh, or 25L.",
+                    f"Could you please specify your approximate investment budget? For example: {t_lakh}, ₹15 lakh, or 25L.",
                     ConversationState.WAITING_INVESTMENT
                 )
             return cls._handle_investment_value(conversation, lead, parsed)
@@ -232,8 +275,10 @@ class InstagramQualificationService:
                 return cls._handle_investment_value(conversation, lead, parsed)
             else:
                 conversation.pending_investment_amount = None
+                threshold = cls._get_brand_threshold(brand)
+                t_lakh = cls._format_lakh(threshold)
                 return (
-                    "No problem! Please enter your target investment amount (e.g. ₹10 lakh, ₹15 lakh, ₹25 lakh).",
+                    f"No problem! Please enter your target investment amount (e.g. {t_lakh}, ₹15 lakh, ₹25 lakh).",
                     ConversationState.WAITING_INVESTMENT
                 )
 
@@ -243,29 +288,29 @@ class InstagramQualificationService:
             lead.save(update_fields=['current_profession'])
 
             if profession == CurrentProfession.BUSINESS:
-                return cls.BUSINESS_DURATION_PROMPT, ConversationState.WAITING_BUSINESS_DURATION
+                return cls.get_business_duration_prompt(), ConversationState.WAITING_BUSINESS_DURATION
             else:
-                return cls.PREVIOUS_EXPERIENCE_PROMPT, ConversationState.WAITING_PREVIOUS_EXPERIENCE
+                return cls.get_previous_experience_prompt(), ConversationState.WAITING_PREVIOUS_EXPERIENCE
 
         elif current_state == ConversationState.WAITING_BUSINESS_DURATION:
             lead.business_duration = cleaned_text
             lead.business_experience = True
             lead.save(update_fields=['business_duration', 'business_experience'])
-            return cls.LOCATION_PROMPT, ConversationState.WAITING_LOCATION
+            return cls.get_location_prompt(brand), ConversationState.WAITING_LOCATION
 
         elif current_state == ConversationState.WAITING_PREVIOUS_EXPERIENCE:
             has_exp = any(word in cleaned_text.lower() for word in ['yes', 'yeah', 'yep', 'owned', 'ran', 'have', 'true', '1'])
             lead.previous_business_experience = has_exp
             lead.business_experience = has_exp
             lead.save(update_fields=['previous_business_experience', 'business_experience'])
-            return cls.LOCATION_PROMPT, ConversationState.WAITING_LOCATION
+            return cls.get_location_prompt(brand), ConversationState.WAITING_LOCATION
 
         elif current_state == ConversationState.WAITING_LOCATION:
             lead.preferred_location = cleaned_text
             if not lead.city:
                 lead.city = cleaned_text
             lead.save(update_fields=['preferred_location', 'city'])
-            return cls.TIMELINE_PROMPT, ConversationState.WAITING_OPENING_TIMELINE
+            return cls.get_timeline_prompt(brand), ConversationState.WAITING_OPENING_TIMELINE
 
         elif current_state == ConversationState.WAITING_OPENING_TIMELINE:
             timeline = normalize_timeline(cleaned_text)
@@ -284,18 +329,21 @@ class InstagramQualificationService:
                 description=f"Franchise qualification completed. Temperature: {lead.lead_temperature}, Status: {lead.qualification_status}."
             )
 
-            return cls.COMPLETION_MESSAGE, ConversationState.QUALIFIED
+            return cls.get_completion_message(brand), ConversationState.QUALIFICATION_COMPLETE
 
         return "", current_state
 
     @classmethod
     def _handle_investment_value(cls, conversation: Conversation, lead: Lead, parsed: dict) -> tuple[str, str]:
         val = parsed['value']
+        brand = lead.brand
+        brand_name = brand.name if (brand and brand.name) else "Franchise"
+
         if parsed['status'] == 'AMBIGUOUS':
             conversation.pending_investment_amount = val
             lakh_val = int(val / Decimal('100000')) if val % Decimal('100000') == 0 else float(val / Decimal('100000'))
             return (
-                f"Just to confirm, are you considering an approximate investment of ₹{lakh_val} lakh for your CoolCane franchise?",
+                f"Just to confirm, are you considering an approximate investment of ₹{lakh_val:g} lakh for your {brand_name} franchise?",
                 ConversationState.CONFIRMING_INVESTMENT
             )
 
@@ -303,9 +351,7 @@ class InstagramQualificationService:
         lead.investment_capacity = val
         lead.save(update_fields=['investment_capacity'])
 
-        threshold = Decimal('1000000.00')
-        if lead.brand and hasattr(lead.brand, 'min_investment_threshold') and lead.brand.min_investment_threshold is not None:
-            threshold = Decimal(str(lead.brand.min_investment_threshold))
+        threshold = cls._get_brand_threshold(brand)
 
         # Check hard investment floor threshold
         if val < threshold:
@@ -317,7 +363,7 @@ class InstagramQualificationService:
                 action=ActivityAction.LEAD_DISQUALIFIED,
                 description=f"Lead disqualified automatically: Investment capacity (₹{val:,.2f}) is below minimum threshold (₹{threshold:,.2f})."
             )
-            return cls.DISQUALIFICATION_MESSAGE, ConversationState.DISQUALIFIED
+            return cls.get_disqualification_message(brand), ConversationState.DISQUALIFIED
         else:
             calculate_lead_qualification(lead, save=True)
-            return cls.PROFESSION_PROMPT, ConversationState.WAITING_PROFESSION
+            return cls.get_profession_prompt(), ConversationState.WAITING_PROFESSION

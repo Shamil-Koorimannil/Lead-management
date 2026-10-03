@@ -1,0 +1,124 @@
+{
+  "id": "local_test_ig_workflow",
+  "name": "Local Test Instagram Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "external_event_id",
+              "value": "local_test_event_001"
+            },
+            {
+              "name": "instagram_account_id",
+              "value": "LOCAL_TEST_ACCOUNT"
+            },
+            {
+              "name": "instagram_user_id",
+              "value": "LOCAL_TEST_USER_001"
+            },
+            {
+              "name": "username",
+              "value": "local_test_user"
+            },
+            {
+              "name": "display_name",
+              "value": "Local Test User"
+            },
+            {
+              "name": "message_text",
+              "value": "Hi, I am interested in the franchise."
+            },
+            {
+              "name": "external_message_id",
+              "value": "local_test_message_001"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-payload",
+      "name": "Set Test Instagram Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_API_URL }}/api/integrations/v1/instagram/process-message/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Integration-Api-Key",
+              "value": "={{ $env.N8N_INTEGRATION_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-django-call",
+      "name": "Call Django Integration API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Test Instagram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Test Instagram Message": {
+      "main": [
+        [
+          {
+            "node": "Call Django Integration API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c2b3a4d5-e6f7-4890-b123-456789abcdef",
+  "meta": {},
+  "tags": []
+}

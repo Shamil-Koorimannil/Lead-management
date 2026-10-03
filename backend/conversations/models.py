@@ -17,7 +17,7 @@ class ConversationState(models.TextChoices):
     WAITING_PREVIOUS_EXPERIENCE = 'WAITING_PREVIOUS_EXPERIENCE', _('Waiting Previous Experience')
     WAITING_LOCATION = 'WAITING_LOCATION', _('Waiting Location')
     WAITING_OPENING_TIMELINE = 'WAITING_OPENING_TIMELINE', _('Waiting Opening Timeline')
-    QUALIFIED = 'QUALIFIED', _('Qualified')
+    QUALIFICATION_COMPLETE = 'QUALIFICATION_COMPLETE', _('Qualification Complete')
     DISQUALIFIED = 'DISQUALIFIED', _('Disqualified')
     HUMAN_HANDOFF = 'HUMAN_HANDOFF', _('Human Handoff')
 

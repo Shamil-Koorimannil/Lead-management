@@ -1,6 +1,90 @@
 {
+  "id": "coolcane_ig_workflow",
   "name": "CoolCane Instagram Franchise Qualification Workflow",
   "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "instagram-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-meta-webhook-get",
+      "name": "Meta Webhook Verification (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const query = items[0].json.query || {};\nconst mode = query['hub.mode'] || query['hub_mode'] || query['mode'];\nconst token = query['hub.verify_token'] || query['hub_verify_token'] || query['verify_token'];\nconst challenge = query['hub.challenge'] || query['hub_challenge'] || query['challenge'];\n\nconst expectedToken = $env.META_WEBHOOK_VERIFY_TOKEN;\n\nif (mode === 'subscribe' && token && expectedToken && token === expectedToken && challenge) {\n  return [{\n    json: {\n      isValid: true,\n      statusCode: 200,\n      challenge: String(challenge)\n    }\n  }];\n} else {\n  return [{\n    json: {\n      isValid: false,\n      statusCode: 403,\n      body: 'Forbidden: Invalid verification token or mode'\n    }\n  }];\n}"
+      },
+      "id": "node-validate-verify-token",
+      "name": "Validate Verification Token",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isValid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-check-verification",
+      "name": "Is Verification Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        540,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-challenge",
+      "name": "Respond Webhook Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        760,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden: Verification failed",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "node-respond-forbidden",
+      "name": "Respond Forbidden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        760,
+        180
+      ]
+    },
     {
       "parameters": {
         "httpMethod": "POST",
@@ -11,7 +95,10 @@
       "name": "Meta Instagram Webhook Ingestion",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        350
+      ]
     },
     {
       "parameters": {
@@ -28,18 +115,23 @@
       "name": "Validate Instagram Event",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [320, 300]
+      "position": [
+        320,
+        350
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const body = items[0].json.body;\nif (!body.entry || !body.entry.length) return [];\nconst entry = body.entry[0];
-const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0] : null;\nif (!messaging || !messaging.message || messaging.message.is_echo) return [];\n\nreturn [{\n  json: {\n    external_event_id: 'meta_evt_' + (messaging.message.mid || Date.now()),\n    instagram_account_id: entry.id,\n    instagram_user_id: messaging.sender.id,\n    username: '',\n    display_name: '',\n    message_text: messaging.message.text || '',\n    external_message_id: messaging.message.mid || ''\n  }\n}];"
+        "functionCode": "const body = items[0].json.body;\nif (!body.entry || !body.entry.length) return [];\nconst entry = body.entry[0];\nconst messaging = entry.messaging && entry.messaging.length ? entry.messaging[0] : null;\nif (!messaging || !messaging.message || messaging.message.is_echo) return [];\n\nreturn [{\n  json: {\n    external_event_id: 'meta_evt_' + (messaging.message.mid || Date.now()),\n    instagram_account_id: entry.id,\n    instagram_user_id: messaging.sender.id,\n    username: '',\n    display_name: '',\n    message_text: messaging.message.text || '',\n    external_message_id: messaging.message.mid || ''\n  }\n}];"
       },
       "id": "node-parse-event",
       "name": "Parse Instagram DM Payload",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [540, 300]
+      "position": [
+        540,
+        350
+      ]
     },
     {
       "parameters": {
@@ -67,7 +159,10 @@ const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0]
       "name": "Call Django Integration API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [760, 300]
+      "position": [
+        760,
+        350
+      ]
     },
     {
       "parameters": {
@@ -84,12 +179,15 @@ const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0]
       "name": "Has Reply Text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [980, 300]
+      "position": [
+        980,
+        350
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v18.0/v18.0/me/messages",
+        "url": "=https://graph.instagram.com/v21.0/17841475938734498/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -112,10 +210,53 @@ const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0]
       "name": "Send Instagram DM Response",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [1200, 300]
+      "position": [
+        1200,
+        350
+      ]
     }
   ],
   "connections": {
+    "Meta Webhook Verification (GET)": {
+      "main": [
+        [
+          {
+            "node": "Validate Verification Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Verification Token": {
+      "main": [
+        [
+          {
+            "node": "Is Verification Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Verification Valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Meta Instagram Webhook Ingestion": {
       "main": [
         [
@@ -172,8 +313,13 @@ const messaging = entry.messaging && entry.messaging.length ? entry.messaging[0]
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
-  }
+  },
+  "versionId": "b1a2c3d4-e5f6-4789-a012-3456789abcde",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
 }

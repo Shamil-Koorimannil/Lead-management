@@ -46,3 +46,6 @@ dist/
 # Docker / Postgres data
 infrastructure/postgres/data/
 postgres_data/
+
+# Scratch / Temporary
+scratch/

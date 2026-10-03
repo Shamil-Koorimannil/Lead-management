@@ -10,6 +10,25 @@
     # Compression
     encode zstd gzip
 
+    # Legal Pages
+    handle /privacy {
+        root * /srv/legal-pages
+        rewrite * /privacy.html
+        file_server
+    }
+
+    handle /terms {
+        root * /srv/legal-pages
+        rewrite * /terms.html
+        file_server
+    }
+
+    handle /data-deletion {
+        root * /srv/legal-pages
+        rewrite * /data-deletion.html
+        file_server
+    }
+
     # API Backend Reverse Proxy
     handle /api/* {
         reverse_proxy backend:8000 {
@@ -46,7 +65,7 @@
     }
 }
 
-n8n.{$DOMAIN:localhost} {
+http://n8n.{$DOMAIN:localhost}, https://n8n.{$DOMAIN:localhost}, http://*.trycloudflare.com, https://*.trycloudflare.com {
     # Security Headers
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -57,6 +76,25 @@ n8n.{$DOMAIN:localhost} {
 
     # Compression
     encode zstd gzip
+
+    # Legal Pages
+    handle /privacy {
+        root * /srv/legal-pages
+        rewrite * /privacy.html
+        file_server
+    }
+
+    handle /terms {
+        root * /srv/legal-pages
+        rewrite * /terms.html
+        file_server
+    }
+
+    handle /data-deletion {
+        root * /srv/legal-pages
+        rewrite * /data-deletion.html
+        file_server
+    }
 
     # n8n Reverse Proxy
     handle {

@@ -1,0 +1,139 @@
+{
+  "id": "local_test_meta_webhook_verification",
+  "name": "Local Test Meta Webhook Verification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "instagram-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-meta-webhook-get",
+      "name": "Meta Webhook Verification (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "webhookId": "node-meta-webhook-get",
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const query = items[0].json.query || {};\nconst mode = query['hub.mode'] || query['hub_mode'] || query['mode'];\nconst token = query['hub.verify_token'] || query['hub_verify_token'] || query['verify_token'];\nconst challenge = query['hub.challenge'] || query['hub_challenge'] || query['challenge'];\n\nconst expectedToken = $env.META_WEBHOOK_VERIFY_TOKEN;\n\nif (mode === 'subscribe' && token && expectedToken && token === expectedToken && challenge) {\n  return [{\n    json: {\n      isValid: true,\n      statusCode: 200,\n      challenge: String(challenge)\n    }\n  }];\n} else {\n  return [{\n    json: {\n      isValid: false,\n      statusCode: 403,\n      body: 'Forbidden: Invalid verification token or mode'\n    }\n  }];\n}"
+      },
+      "id": "node-validate-verify-token",
+      "name": "Validate Verification Token",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isValid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-check-verification",
+      "name": "Is Verification Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        540,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-challenge",
+      "name": "Respond Webhook Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        760,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden: Verification failed",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "node-respond-forbidden",
+      "name": "Respond Forbidden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        760,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "Meta Webhook Verification (GET)": {
+      "main": [
+        [
+          {
+            "node": "Validate Verification Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Verification Token": {
+      "main": [
+        [
+          {
+            "node": "Is Verification Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Verification Valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c3d4e5f6-a7b8-4901-c234-567890abcdef",
+  "meta": {},
+  "tags": []
+}
